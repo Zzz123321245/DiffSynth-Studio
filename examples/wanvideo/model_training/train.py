@@ -62,28 +62,65 @@ class WanTrainingModule(DiffusionTrainingModule):
         self.max_timestep_boundary = max_timestep_boundary
         self.min_timestep_boundary = min_timestep_boundary
         
+    @staticmethod
+    def fetch_video_from_data(data):
+        video = data.get("video")
+        if video is None:
+            video = data.get("video_path")
+        if video is None:
+            raise KeyError("Cannot find video data. Expected key `video` or `video_path`.")
+        return video
+
+    @staticmethod
+    def fetch_prompt_from_data(data):
+        prompt = data.get("prompt")
+        if prompt is None:
+            prompt = data.get("caption")
+        if prompt is None:
+            raise KeyError("Cannot find text prompt. Expected key `prompt` or `caption`.")
+        return prompt
+
     def parse_extra_inputs(self, data, extra_inputs, inputs_shared):
         for extra_input in extra_inputs:
             if extra_input == "input_image":
-                inputs_shared["input_image"] = data["video"][0]
+                inputs_shared["input_image"] = self.fetch_video_from_data(data)[0]
             elif extra_input == "end_image":
-                inputs_shared["end_image"] = data["video"][-1]
+                inputs_shared["end_image"] = self.fetch_video_from_data(data)[-1]
             elif extra_input == "reference_image" or extra_input == "vace_reference_image":
                 inputs_shared[extra_input] = data[extra_input][0]
+            elif extra_input == "camera_control_pose_file":
+                if "camera_control_pose_file" in data:
+                    inputs_shared["camera_control_pose_file"] = data["camera_control_pose_file"]
+                elif "pose_file_aligned" in data:
+                    inputs_shared["camera_control_pose_file"] = data["pose_file_aligned"]
+                elif "pose_file_raw" in data:
+                    inputs_shared["camera_control_pose_file"] = data["pose_file_raw"]
+            elif extra_input == "camera_control_pose_width":
+                if "camera_control_pose_width" in data:
+                    inputs_shared["camera_control_pose_width"] = data["camera_control_pose_width"]
+                elif "width" in data:
+                    inputs_shared["camera_control_pose_width"] = data["width"]
+            elif extra_input == "camera_control_pose_height":
+                if "camera_control_pose_height" in data:
+                    inputs_shared["camera_control_pose_height"] = data["camera_control_pose_height"]
+                elif "height" in data:
+                    inputs_shared["camera_control_pose_height"] = data["height"]
             else:
                 inputs_shared[extra_input] = data[extra_input]
         return inputs_shared
     
     def get_pipeline_inputs(self, data):
-        inputs_posi = {"prompt": data["prompt"]}
+        video = self.fetch_video_from_data(data)
+        prompt = self.fetch_prompt_from_data(data)
+        inputs_posi = {"prompt": prompt}
         inputs_nega = {}
         inputs_shared = {
             # Assume you are using this pipeline for inference,
             # please fill in the input parameters.
-            "input_video": data["video"],
-            "height": data["video"][0].size[1],
-            "width": data["video"][0].size[0],
-            "num_frames": len(data["video"]),
+            "input_video": video,
+            "height": video[0].size[1],
+            "width": video[0].size[0],
+            "num_frames": len(video),
             # Please do not modify the following parameters
             # unless you clearly know what this will cause.
             "cfg_scale": 1,
@@ -146,6 +183,9 @@ if __name__ == "__main__":
         special_operator_map={
             "animate_face_video": ToAbsolutePath(args.dataset_base_path) >> LoadVideo(args.num_frames, 4, 1, frame_processor=ImageCropAndResize(512, 512, None, 16, 16)),
             "input_audio": ToAbsolutePath(args.dataset_base_path) >> LoadAudio(sr=16000),
+            "camera_control_pose_file": ToAbsolutePath(args.dataset_base_path),
+            "pose_file_aligned": ToAbsolutePath(args.dataset_base_path),
+            "pose_file_raw": ToAbsolutePath(args.dataset_base_path),
         }
     )
     model = WanTrainingModule(

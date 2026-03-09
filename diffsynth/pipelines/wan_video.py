@@ -1,3 +1,4 @@
+import os
 import torch, types
 import numpy as np
 from PIL import Image
@@ -27,6 +28,7 @@ from ..models.wan_video_animate_adapter import WanAnimateAdapter
 from ..models.wan_video_mot import MotWanModel
 from ..models.wav2vec import WanS2VAudioEncoder
 from ..models.longcat_video_dit import LongCatVideoTransformer3DModel
+from ..models.wan_video_camera_controller import process_pose_file
 
 
 class WanVideoPipeline(BasePipeline):
@@ -201,6 +203,10 @@ class WanVideoPipeline(BasePipeline):
         camera_control_direction: Optional[Literal["Left", "Right", "Up", "Down", "LeftUp", "LeftDown", "RightUp", "RightDown"]] = None,
         camera_control_speed: Optional[float] = 1/54,
         camera_control_origin: Optional[tuple] = (0, 0.532139961, 0.946026558, 0.5, 0.5, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0),
+        camera_control_pose_file: Optional[str] = None,
+        camera_control_poses: Optional[list] = None,
+        camera_control_pose_width: Optional[int] = 1280,
+        camera_control_pose_height: Optional[int] = 720,
         # VACE
         vace_video: Optional[list[Image.Image]] = None,
         vace_video_mask: Optional[Image.Image] = None,
@@ -268,6 +274,8 @@ class WanVideoPipeline(BasePipeline):
             "input_video": input_video, "denoising_strength": denoising_strength,
             "control_video": control_video, "reference_image": reference_image,
             "camera_control_direction": camera_control_direction, "camera_control_speed": camera_control_speed, "camera_control_origin": camera_control_origin,
+            "camera_control_pose_file": camera_control_pose_file, "camera_control_poses": camera_control_poses,
+            "camera_control_pose_width": camera_control_pose_width, "camera_control_pose_height": camera_control_pose_height,
             "vace_video": vace_video, "vace_video_mask": vace_video_mask, "vace_reference_image": vace_reference_image, "vace_scale": vace_scale,
             "seed": seed, "rand_device": rand_device,
             "height": height, "width": width, "num_frames": num_frames,
@@ -555,17 +563,89 @@ class WanVideoUnit_FunReference(PipelineUnit):
 class WanVideoUnit_FunCameraControl(PipelineUnit):
     def __init__(self):
         super().__init__(
-            input_params=("height", "width", "num_frames", "camera_control_direction", "camera_control_speed", "camera_control_origin", "latents", "input_image", "tiled", "tile_size", "tile_stride"),
+            input_params=(
+                "height", "width", "num_frames",
+                "camera_control_direction", "camera_control_speed", "camera_control_origin",
+                "camera_control_pose_file", "camera_control_poses", "camera_control_pose_width", "camera_control_pose_height",
+                "latents", "input_image", "tiled", "tile_size", "tile_stride"
+            ),
             output_params=("control_camera_latents_input", "y"),
             onload_model_names=("vae",)
         )
 
-    def process(self, pipe: WanVideoPipeline, height, width, num_frames, camera_control_direction, camera_control_speed, camera_control_origin, latents, input_image, tiled, tile_size, tile_stride):
-        if camera_control_direction is None:
-            return {}
+    @staticmethod
+    def _parse_pose_line(line):
+        values = []
+        for token in line.replace(",", " ").strip().split():
+            try:
+                values.append(float(token))
+            except ValueError:
+                return None
+        if len(values) < 19:
+            return None
+        return values[:19]
+
+    @classmethod
+    def _load_pose_entries(cls, camera_control_pose_file, camera_control_poses, num_frames):
+        if camera_control_poses is not None:
+            if isinstance(camera_control_poses, torch.Tensor):
+                entries = camera_control_poses.detach().cpu().tolist()
+            elif isinstance(camera_control_poses, np.ndarray):
+                entries = camera_control_poses.tolist()
+            elif isinstance(camera_control_poses, str):
+                if os.path.isfile(camera_control_poses):
+                    return cls._load_pose_entries(camera_control_poses, None, num_frames)
+                raise FileNotFoundError(f"camera_control_poses string is not a valid file path: {camera_control_poses}")
+            else:
+                entries = camera_control_poses
+            entries = [entry[:19] for entry in entries if isinstance(entry, (list, tuple)) and len(entry) >= 19]
+        elif camera_control_pose_file is not None:
+            if not os.path.isfile(camera_control_pose_file):
+                raise FileNotFoundError(f"camera_control_pose_file not found: {camera_control_pose_file}")
+            entries = []
+            with open(camera_control_pose_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    if not line.strip():
+                        continue
+                    values = cls._parse_pose_line(line)
+                    if values is not None:
+                        entries.append(values)
+        else:
+            return None
+
+        if len(entries) == 0:
+            return None
+        if len(entries) < num_frames:
+            entries.extend([entries[-1]] * (num_frames - len(entries)))
+        return entries[:num_frames]
+
+    def process(
+        self, pipe: WanVideoPipeline,
+        height, width, num_frames,
+        camera_control_direction, camera_control_speed, camera_control_origin,
+        camera_control_pose_file, camera_control_poses, camera_control_pose_width, camera_control_pose_height,
+        latents, input_image, tiled, tile_size, tile_stride
+    ):
         pipe.load_models_to_device(self.onload_model_names)
-        camera_control_plucker_embedding = pipe.dit.control_adapter.process_camera_coordinates(
-            camera_control_direction, num_frames, height, width, camera_control_speed, camera_control_origin)
+        pose_entries = self._load_pose_entries(camera_control_pose_file, camera_control_poses, num_frames)
+        if pose_entries is not None:
+            if camera_control_pose_width is None:
+                camera_control_pose_width = 1280
+            if camera_control_pose_height is None:
+                camera_control_pose_height = 720
+            camera_control_plucker_embedding = process_pose_file(
+                pose_entries,
+                width=width,
+                height=height,
+                original_pose_width=int(camera_control_pose_width),
+                original_pose_height=int(camera_control_pose_height),
+                device=pipe.device,
+            )
+        elif camera_control_direction is not None:
+            camera_control_plucker_embedding = pipe.dit.control_adapter.process_camera_coordinates(
+                camera_control_direction, num_frames, height, width, camera_control_speed, camera_control_origin)
+        else:
+            return {}
         
         control_camera_video = camera_control_plucker_embedding[:num_frames].permute([3, 0, 1, 2]).unsqueeze(0)
         control_camera_latents = torch.concat(
