@@ -1,7 +1,7 @@
 accelerate launch examples/wanvideo/model_training/train.py \
   --dataset_base_path data \
-  --dataset_metadata_path data/RealEstate10K/annotations/train_wan_camera_control.csv \
-  --data_file_keys "video,camera_control_pose_file" \
+  --dataset_metadata_path data/RealEstate10K/annotations/train.json \
+  --data_file_keys "video_path,pose_file_aligned" \
   --height 480 \
   --width 832 \
   --dataset_repeat 100 \
