@@ -1,0 +1,154 @@
+The following values were not passed to `accelerate launch` and had defaults used instead:
+	`--num_machines` was set to a value of `1`
+	`--dynamo_backend` was set to a value of `'no'`
+To avoid this warning pass in values for each of the problematic parameters or run `accelerate config`.
+/net/scratch/p64096rw/DiffSynth-Studio/examples/wanvideo/model_training/train.py:30: UserWarning: Gradient checkpointing is detected as disabled. To prevent out-of-memory errors, the training framework will forcibly enable gradient checkpointing.
+  warnings.warn("Gradient checkpointing is detected as disabled. To prevent out-of-memory errors, the training framework will forcibly enable gradient checkpointing.")
+/net/scratch/p64096rw/DiffSynth-Studio/examples/wanvideo/model_training/train.py:30: UserWarning: Gradient checkpointing is detected as disabled. To prevent out-of-memory errors, the training framework will forcibly enable gradient checkpointing.
+  warnings.warn("Gradient checkpointing is detected as disabled. To prevent out-of-memory errors, the training framework will forcibly enable gradient checkpointing.")
+2026-03-10 23:39:04,656 - modelscope - INFO - Target directory already exists, skipping creation.
+2026-03-10 23:39:07,018 - modelscope - INFO - Target directory already exists, skipping creation.
+2026-03-11 00:00:21,101 - modelscope - INFO - Target directory already exists, skipping creation.
+2026-03-11 00:00:23,323 - modelscope - INFO - Target directory already exists, skipping creation.
+  0%|          | 0/3111000 [00:00<?, ?it/s]  0%|          | 0/3111000 [00:00<?, ?it/s]  0%|          | 0/3111000 [00:26<?, ?it/s]
+  0%|          | 0/3111000 [00:26<?, ?it/s]
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/net/scratch/p64096rw/DiffSynth-Studio/examples/wanvideo/model_training/train.py", line 225, in <module>
+[rank0]:     launcher_map[args.task](accelerator, dataset, model, model_logger, args=args)
+[rank0]:   File "/net/scratch/p64096rw/DiffSynth-Studio/diffsynth/diffusion/runner.py", line 47, in launch_training_task
+[rank0]:     loss = model(data)
+[rank0]:            ^^^^^^^^^^^
+[rank0]:   File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/torch/nn/parallel/distributed.py", line 1666, in forward
+[rank0]:     else self._run_ddp_forward(*inputs, **kwargs)
+[rank0]:          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/torch/nn/parallel/distributed.py", line 1492, in _run_ddp_forward
+[rank0]:     return self.module(*inputs, **kwargs)  # type: ignore[index]
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/accelerate/utils/operations.py", line 823, in forward
+[rank0]:     return model_forward(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/accelerate/utils/operations.py", line 811, in __call__
+[rank0]:     return convert_to_fp32(self.model_forward(*args, **kwargs))
+[rank0]:                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/torch/amp/autocast_mode.py", line 44, in decorate_autocast
+[rank0]:     return func(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/net/scratch/p64096rw/DiffSynth-Studio/examples/wanvideo/model_training/train.py", line 143, in forward
+[rank0]:     inputs = self.pipe.unit_runner(unit, self.pipe, *inputs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/net/scratch/p64096rw/DiffSynth-Studio/diffsynth/diffusion/base_pipeline.py", line 460, in __call__
+[rank0]:     processor_outputs = unit.process(pipe, **processor_inputs)
+[rank0]:                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/net/scratch/p64096rw/DiffSynth-Studio/diffsynth/pipelines/wan_video.py", line 656, in process
+[rank0]:     camera_control_plucker_embedding = process_pose_file(
+[rank0]:                                        ^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/net/scratch/p64096rw/DiffSynth-Studio/diffsynth/models/wan_video_camera_controller.py", line 177, in process_pose_file
+[rank0]:     plucker_embedding = ray_condition(K, c2ws, height, width, device=device)[0].permute(0, 3, 1, 2).contiguous()  # V, 6, H, W
+[rank0]:                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/net/scratch/p64096rw/DiffSynth-Studio/diffsynth/models/wan_video_camera_controller.py", line 132, in ray_condition
+[rank0]:     xs = (i - cx) / fx * zs
+[rank0]:           ~~^~~~
+[rank0]: RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu!
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "/net/scratch/p64096rw/DiffSynth-Studio/examples/wanvideo/model_training/train.py", line 225, in <module>
+[rank1]:     launcher_map[args.task](accelerator, dataset, model, model_logger, args=args)
+[rank1]:   File "/net/scratch/p64096rw/DiffSynth-Studio/diffsynth/diffusion/runner.py", line 47, in launch_training_task
+[rank1]:     loss = model(data)
+[rank1]:            ^^^^^^^^^^^
+[rank1]:   File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/torch/nn/parallel/distributed.py", line 1666, in forward
+[rank1]:     else self._run_ddp_forward(*inputs, **kwargs)
+[rank1]:          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/torch/nn/parallel/distributed.py", line 1492, in _run_ddp_forward
+[rank1]:     return self.module(*inputs, **kwargs)  # type: ignore[index]
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/accelerate/utils/operations.py", line 823, in forward
+[rank1]:     return model_forward(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/accelerate/utils/operations.py", line 811, in __call__
+[rank1]:     return convert_to_fp32(self.model_forward(*args, **kwargs))
+[rank1]:                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/torch/amp/autocast_mode.py", line 44, in decorate_autocast
+[rank1]:     return func(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/net/scratch/p64096rw/DiffSynth-Studio/examples/wanvideo/model_training/train.py", line 143, in forward
+[rank1]:     inputs = self.pipe.unit_runner(unit, self.pipe, *inputs)
+[rank1]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/net/scratch/p64096rw/DiffSynth-Studio/diffsynth/diffusion/base_pipeline.py", line 460, in __call__
+[rank1]:     processor_outputs = unit.process(pipe, **processor_inputs)
+[rank1]:                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/net/scratch/p64096rw/DiffSynth-Studio/diffsynth/pipelines/wan_video.py", line 656, in process
+[rank1]:     camera_control_plucker_embedding = process_pose_file(
+[rank1]:                                        ^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/net/scratch/p64096rw/DiffSynth-Studio/diffsynth/models/wan_video_camera_controller.py", line 177, in process_pose_file
+[rank1]:     plucker_embedding = ray_condition(K, c2ws, height, width, device=device)[0].permute(0, 3, 1, 2).contiguous()  # V, 6, H, W
+[rank1]:                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/net/scratch/p64096rw/DiffSynth-Studio/diffsynth/models/wan_video_camera_controller.py", line 132, in ray_condition
+[rank1]:     xs = (i - cx) / fx * zs
+[rank1]:           ~~^~~~
+[rank1]: RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:1 and cpu!
+[rank0]:[W311 00:01:11.221166157 ProcessGroupNCCL.cpp:1553] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+W0311 00:01:35.161000 354931 /net/scratch/p64096rw/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 355042 closing signal SIGTERM
+E0311 00:01:35.276000 354931 /net/scratch/p64096rw/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/api.py:984] failed (exitcode: 1) local_rank: 0 (pid: 355041) of binary: /mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/bin/python3.12
+Traceback (most recent call last):
+  File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/bin/accelerate", line 6, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/accelerate/commands/accelerate_cli.py", line 50, in main
+    args.func(args)
+  File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/accelerate/commands/launch.py", line 1396, in launch_command
+    multi_gpu_launcher(args)
+  File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/accelerate/commands/launch.py", line 1023, in multi_gpu_launcher
+    distrib_run.run(args)
+  File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/torch/distributed/run.py", line 982, in run
+    elastic_launch(
+  File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 170, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/iusers01/eee01/p64096rw/scratch/software/miniconda3/envs/diffsynth/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 317, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+examples/wanvideo/model_training/train.py FAILED
+------------------------------------------------------------
+Failures:
+[1]:
+  time      : 2026-03-11_00:01:35
+  host      : node858.csf3.man.alces.network
+  rank      : 1 (local_rank: 1)
+  exitcode  : 1 (pid: 355042)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-03-11_00:01:35
+  host      : node858.csf3.man.alces.network
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 355041)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================

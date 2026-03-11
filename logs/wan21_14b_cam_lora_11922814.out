@@ -1,0 +1,3 @@
+SubmitDir=/net/scratch/p64096rw/DiffSynth-Studio
+WorkDir(pwd)=/net/scratch/p64096rw/DiffSynth-Studio
+JobID=11922814 GPUs=4 CUDA_VISIBLE_DEVICES=0,1,2,3 CPUs=16

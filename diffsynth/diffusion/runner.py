@@ -1,3 +1,10 @@
+"""
+该代码定义了两个函数 `launch_training_task` 和 `launch_data_process_task`，分别用于启动模型训练任务和数据处理任务。
+这些函数使用了 `Accelerator` 来加速训练和数据处理过程，并且支持分布式训练。训练过程中会使用 `AdamW` 优化器和一个恒定学习率的调度器。
+数据处理任务会将处理后的数据保存到指定的输出路径中。
+
+这里主要完成的是trian_step和data_process_step的功能，分别对应训练和数据处理的步骤。
+"""
 import os, torch
 from tqdm import tqdm
 from accelerate import Accelerator
@@ -8,7 +15,7 @@ from .logger import ModelLogger
 def launch_training_task(
     accelerator: Accelerator,
     dataset: torch.utils.data.Dataset,
-    model: DiffusionTrainingModule,
+    model: DiffusionTrainingModule,  # 训练模块，包含模型和前向计算逻辑,是已经实例化的model
     model_logger: ModelLogger,
     learning_rate: float = 1e-5,
     weight_decay: float = 1e-2,

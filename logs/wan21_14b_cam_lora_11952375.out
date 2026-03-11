@@ -1,0 +1,123 @@
+SubmitDir=/net/scratch/p64096rw/DiffSynth-Studio
+WorkDir(pwd)=/net/scratch/p64096rw/DiffSynth-Studio
+JobID=11952375 GPUs=2 CUDA_VISIBLE_DEVICES=0,1 CPUs=8
+To avoid repeatedly downloading model files, (PAI/Wan2.1-Fun-V1.1-14B-Control-Camera, models_t5_umt5-xxl-enc-bf16.pth) is redirected to ('DiffSynth-Studio/Wan-Series-Converted-Safetensors', 'models_t5_umt5-xxl-enc-bf16.safetensors'). You can use `redirect_common_files=False` to disable file redirection.To avoid repeatedly downloading model files, (PAI/Wan2.1-Fun-V1.1-14B-Control-Camera, models_t5_umt5-xxl-enc-bf16.pth) is redirected to ('DiffSynth-Studio/Wan-Series-Converted-Safetensors', 'models_t5_umt5-xxl-enc-bf16.safetensors'). You can use `redirect_common_files=False` to disable file redirection.
+
+To avoid repeatedly downloading model files, (PAI/Wan2.1-Fun-V1.1-14B-Control-Camera, Wan2.1_VAE.pth) is redirected to ('DiffSynth-Studio/Wan-Series-Converted-Safetensors', 'Wan2.1_VAE.safetensors'). You can use `redirect_common_files=False` to disable file redirection.To avoid repeatedly downloading model files, (PAI/Wan2.1-Fun-V1.1-14B-Control-Camera, Wan2.1_VAE.pth) is redirected to ('DiffSynth-Studio/Wan-Series-Converted-Safetensors', 'Wan2.1_VAE.safetensors'). You can use `redirect_common_files=False` to disable file redirection.
+
+To avoid repeatedly downloading model files, (PAI/Wan2.1-Fun-V1.1-14B-Control-Camera, models_clip_open-clip-xlm-roberta-large-vit-huge-14.pth) is redirected to ('DiffSynth-Studio/Wan-Series-Converted-Safetensors', 'models_clip_open-clip-xlm-roberta-large-vit-huge-14.safetensors'). You can use `redirect_common_files=False` to disable file redirection.To avoid repeatedly downloading model files, (PAI/Wan2.1-Fun-V1.1-14B-Control-Camera, models_clip_open-clip-xlm-roberta-large-vit-huge-14.pth) is redirected to ('DiffSynth-Studio/Wan-Series-Converted-Safetensors', 'models_clip_open-clip-xlm-roberta-large-vit-huge-14.safetensors'). You can use `redirect_common_files=False` to disable file redirection.
+
+Downloading Model from https://www.modelscope.cn to directory: /net/scratch/p64096rw/DiffSynth-Studio/models/PAI/Wan2.1-Fun-V1.1-14B-Control-Camera
+Loading models from: "./models/PAI/Wan2.1-Fun-V1.1-14B-Control-Camera/diffusion_pytorch_model.safetensors"
+Downloading Model from https://www.modelscope.cn to directory: /net/scratch/p64096rw/DiffSynth-Studio/models/PAI/Wan2.1-Fun-V1.1-14B-Control-Camera
+Loading models from: "./models/PAI/Wan2.1-Fun-V1.1-14B-Control-Camera/diffusion_pytorch_model.safetensors"
+Loaded model: {
+    "model_name": "wan_video_dit",
+    "model_class": "diffsynth.models.wan_video_dit.WanModel",
+    "extra_kwargs": {
+        "has_image_input": true,
+        "patch_size": [
+            1,
+            2,
+            2
+        ],
+        "in_dim": 32,
+        "dim": 5120,
+        "ffn_dim": 13824,
+        "freq_dim": 256,
+        "text_dim": 4096,
+        "out_dim": 16,
+        "num_heads": 40,
+        "num_layers": 40,
+        "eps": 1e-06,
+        "has_ref_conv": false,
+        "add_control_adapter": true,
+        "in_dim_control_adapter": 24
+    }
+}
+Loaded model: {
+    "model_name": "wan_video_dit",
+    "model_class": "diffsynth.models.wan_video_dit.WanModel",
+    "extra_kwargs": {
+        "has_image_input": true,
+        "patch_size": [
+            1,
+            2,
+            2
+        ],
+        "in_dim": 32,
+        "dim": 5120,
+        "ffn_dim": 13824,
+        "freq_dim": 256,
+        "text_dim": 4096,
+        "out_dim": 16,
+        "num_heads": 40,
+        "num_layers": 40,
+        "eps": 1e-06,
+        "has_ref_conv": false,
+        "add_control_adapter": true,
+        "in_dim_control_adapter": 24
+    }
+}
+Downloading Model from https://www.modelscope.cn to directory: /net/scratch/p64096rw/DiffSynth-Studio/models/DiffSynth-Studio/Wan-Series-Converted-Safetensors
+Loading models from: "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/models_t5_umt5-xxl-enc-bf16.safetensors"
+Downloading Model from https://www.modelscope.cn to directory: /net/scratch/p64096rw/DiffSynth-Studio/models/DiffSynth-Studio/Wan-Series-Converted-Safetensors
+Loading models from: "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/models_t5_umt5-xxl-enc-bf16.safetensors"
+Loaded model: {
+    "model_name": "wan_video_text_encoder",
+    "model_class": "diffsynth.models.wan_video_text_encoder.WanTextEncoder",
+    "extra_kwargs": null
+}
+Loaded model: {
+    "model_name": "wan_video_text_encoder",
+    "model_class": "diffsynth.models.wan_video_text_encoder.WanTextEncoder",
+    "extra_kwargs": null
+}
+Downloading Model from https://www.modelscope.cn to directory: /net/scratch/p64096rw/DiffSynth-Studio/models/DiffSynth-Studio/Wan-Series-Converted-Safetensors
+Loading models from: "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/Wan2.1_VAE.safetensors"
+Downloading Model from https://www.modelscope.cn to directory: /net/scratch/p64096rw/DiffSynth-Studio/models/DiffSynth-Studio/Wan-Series-Converted-Safetensors
+Loading models from: "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/Wan2.1_VAE.safetensors"
+Loaded model: {
+    "model_name": "wan_video_vae",
+    "model_class": "diffsynth.models.wan_video_vae.WanVideoVAE",
+    "extra_kwargs": null
+}
+Loaded model: {
+    "model_name": "wan_video_vae",
+    "model_class": "diffsynth.models.wan_video_vae.WanVideoVAE",
+    "extra_kwargs": null
+}
+Downloading Model from https://www.modelscope.cn to directory: /net/scratch/p64096rw/DiffSynth-Studio/models/DiffSynth-Studio/Wan-Series-Converted-Safetensors
+Loading models from: "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/models_clip_open-clip-xlm-roberta-large-vit-huge-14.safetensors"
+Downloading Model from https://www.modelscope.cn to directory: /net/scratch/p64096rw/DiffSynth-Studio/models/DiffSynth-Studio/Wan-Series-Converted-Safetensors
+Loading models from: "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/models_clip_open-clip-xlm-roberta-large-vit-huge-14.safetensors"
+Loaded model: {
+    "model_name": "wan_video_image_encoder",
+    "model_class": "diffsynth.models.wan_video_image_encoder.WanImageEncoder",
+    "extra_kwargs": null
+}
+Using wan_video_text_encoder from "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/models_t5_umt5-xxl-enc-bf16.safetensors".
+Using wan_video_dit from "./models/PAI/Wan2.1-Fun-V1.1-14B-Control-Camera/diffusion_pytorch_model.safetensors".
+Using wan_video_vae from "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/Wan2.1_VAE.safetensors".
+Using wan_video_image_encoder from "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/models_clip_open-clip-xlm-roberta-large-vit-huge-14.safetensors".
+No wan_video_motion_controller models available. This is not an error.
+No wan_video_vace models available. This is not an error.
+No wan_video_vap models available. This is not an error.
+No wans2v_audio_encoder models available. This is not an error.
+No wan_video_animate_adapter models available. This is not an error.
+Loaded model: {
+    "model_name": "wan_video_image_encoder",
+    "model_class": "diffsynth.models.wan_video_image_encoder.WanImageEncoder",
+    "extra_kwargs": null
+}
+Using wan_video_text_encoder from "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/models_t5_umt5-xxl-enc-bf16.safetensors".
+Using wan_video_dit from "./models/PAI/Wan2.1-Fun-V1.1-14B-Control-Camera/diffusion_pytorch_model.safetensors".
+Using wan_video_vae from "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/Wan2.1_VAE.safetensors".
+Using wan_video_image_encoder from "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/models_clip_open-clip-xlm-roberta-large-vit-huge-14.safetensors".
+No wan_video_motion_controller models available. This is not an error.
+No wan_video_vace models available. This is not an error.
+No wan_video_vap models available. This is not an error.
+No wans2v_audio_encoder models available. This is not an error.
+No wan_video_animate_adapter models available. This is not an error.
+Downloading Model from https://www.modelscope.cn to directory: /net/scratch/p64096rw/DiffSynth-Studio/models/Wan-AI/Wan2.1-T2V-1.3B
+Downloading Model from https://www.modelscope.cn to directory: /net/scratch/p64096rw/DiffSynth-Studio/models/Wan-AI/Wan2.1-T2V-1.3B

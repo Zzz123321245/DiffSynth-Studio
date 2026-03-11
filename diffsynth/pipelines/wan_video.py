@@ -574,31 +574,51 @@ class WanVideoUnit_FunCameraControl(PipelineUnit):
         )
 
     @staticmethod
-    def _parse_pose_line(line):
+    def _normalize_pose_values(values):
+        values = [float(v) for v in values]
+        if len(values) == 19:
+            return values
+        # Some camera datasets (e.g., RealCam-Vid/RealEstate10K variants) include
+        # 5 distortion coefficients before the 3x4 extrinsic matrix:
+        # [id, fx, fy, cx, cy, d0, d1, d2, d3, d4, r11, ..., r33, tz]
+        # Convert them to the 19-value format expected by Camera():
+        # [id, fx, fy, cx, cy, 0, 0, r11, ..., r33, tz]
+        if len(values) >= 22:
+            return values[:5] + [0.0, 0.0] + values[10:22]
+        if len(values) < 19:
+            return None
+        return values[:19]
+
+    @classmethod
+    def _parse_pose_line(cls, line):
         values = []
         for token in line.replace(",", " ").strip().split():
             try:
                 values.append(float(token))
             except ValueError:
                 return None
-        if len(values) < 19:
-            return None
-        return values[:19]
+        return cls._normalize_pose_values(values)
 
     @classmethod
     def _load_pose_entries(cls, camera_control_pose_file, camera_control_poses, num_frames):
         if camera_control_poses is not None:
             if isinstance(camera_control_poses, torch.Tensor):
-                entries = camera_control_poses.detach().cpu().tolist()
+                raw_entries = camera_control_poses.detach().cpu().tolist()
             elif isinstance(camera_control_poses, np.ndarray):
-                entries = camera_control_poses.tolist()
+                raw_entries = camera_control_poses.tolist()
             elif isinstance(camera_control_poses, str):
                 if os.path.isfile(camera_control_poses):
                     return cls._load_pose_entries(camera_control_poses, None, num_frames)
                 raise FileNotFoundError(f"camera_control_poses string is not a valid file path: {camera_control_poses}")
             else:
-                entries = camera_control_poses
-            entries = [entry[:19] for entry in entries if isinstance(entry, (list, tuple)) and len(entry) >= 19]
+                raw_entries = camera_control_poses
+            entries = []
+            for entry in raw_entries:
+                if not isinstance(entry, (list, tuple)):
+                    continue
+                normalized_entry = cls._normalize_pose_values(entry)
+                if normalized_entry is not None:
+                    entries.append(normalized_entry)
         elif camera_control_pose_file is not None:
             if not os.path.isfile(camera_control_pose_file):
                 raise FileNotFoundError(f"camera_control_pose_file not found: {camera_control_pose_file}")
