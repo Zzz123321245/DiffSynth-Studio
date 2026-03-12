@@ -678,6 +678,7 @@ class WanVideoUnit_FunCameraControl(PipelineUnit):
         control_camera_latents = control_camera_latents.contiguous().view(b, f // 4, 4, c, h, w).transpose(2, 3)
         control_camera_latents = control_camera_latents.contiguous().view(b, f // 4, c * 4, h, w).transpose(1, 2)
         control_camera_latents_input = control_camera_latents.to(device=pipe.device, dtype=pipe.torch_dtype)
+        print("control latents.shape:{}".format(control_camera_latents_input.shape))
         
         input_image = input_image.resize((width, height))
         input_latents = pipe.preprocess_video([input_image])

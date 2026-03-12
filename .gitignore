@@ -1,17 +1,24 @@
-/data
-/models
-/scripts
-/diffusers
-*.pkl
-*.safetensors
-*.pth
-*.ckpt
+# video outputs
+*.mp4
+*.avi
+*.mov
+*.mkv
+# checkpoints
 *.pt
+*.ckpt
+*.safetensors
 *.bin
-*.DS_Store
-*.msc
-*.mv
-log*.txt
+# models
+models/
+# logs
+wandb/
+
+# vscode
+.vscode/
+
+# python cache
+__pycache__/
+*.pyc
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

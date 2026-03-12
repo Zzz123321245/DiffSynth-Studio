@@ -341,7 +341,10 @@ class WanModel(torch.nn.Module):
     def patchify(self, x: torch.Tensor, control_camera_latents_input: Optional[torch.Tensor] = None):
         x = self.patch_embedding(x)
         if self.control_adapter is not None and control_camera_latents_input is not None:
+            # adapter只接受camera control的输入
+            # control_adapter来自simple_adapter, 
             y_camera = self.control_adapter(control_camera_latents_input)
+            # 
             x = [u + v for u, v in zip(x, y_camera)]
             x = x[0].unsqueeze(0)
         return x
