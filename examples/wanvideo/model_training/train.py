@@ -1,8 +1,9 @@
-import torch, os, argparse, accelerate, warnings
+import torch, os, argparse, accelerate, warnings, json, csv
 from diffsynth.core import UnifiedDataset
 from diffsynth.core.data.operators import LoadVideo, LoadAudio, ImageCropAndResize, ToAbsolutePath
 from diffsynth.pipelines.wan_video import WanVideoPipeline, ModelConfig
 from diffsynth.diffusion import *
+from diffsynth.utils.data import save_video
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
@@ -145,6 +146,173 @@ class WanTrainingModule(DiffusionTrainingModule):
         return loss
 
 
+def _str2bool(value):
+    if isinstance(value, bool):
+        return value
+    value = str(value).strip().lower()
+    if value in ("1", "true", "yes", "y", "on"):
+        return True
+    if value in ("0", "false", "no", "n", "off"):
+        return False
+    raise argparse.ArgumentTypeError(f"Invalid boolean value: {value}")
+
+
+def _load_metadata_rows(metadata_path):
+    if metadata_path is None:
+        return []
+    if metadata_path.endswith(".json"):
+        with open(metadata_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    if metadata_path.endswith(".jsonl"):
+        rows = []
+        with open(metadata_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    rows.append(json.loads(line))
+        return rows
+    with open(metadata_path, "r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        return [row for row in reader]
+
+
+def _infer_pose_key(data_file_keys: str):
+    keys = [k.strip() for k in data_file_keys.split(",") if k.strip()]
+    for key in ("camera_control_pose_file", "pose_file_aligned", "pose_file_raw"):
+        if key in keys:
+            return key
+    return "pose_file_aligned"
+
+
+class WanValidationRunner:
+    def __init__(self, args):
+        self.args = args
+        self.enabled = args.validation_metadata_path is not None and args.validation_num_samples > 0
+        self.pose_key = args.validation_pose_key or _infer_pose_key(args.data_file_keys)
+        self.rows = _load_metadata_rows(args.validation_metadata_path) if self.enabled else []
+        self.sample_indices = list(range(min(len(self.rows), args.validation_num_samples))) if self.enabled else []
+        self.dataset = None
+        if self.enabled:
+            self.dataset = UnifiedDataset(
+                base_path=args.dataset_base_path,
+                metadata_path=args.validation_metadata_path,
+                repeat=1,
+                data_file_keys=args.data_file_keys.split(","),
+                main_data_operator=UnifiedDataset.default_video_operator(
+                    base_path=args.dataset_base_path,
+                    max_pixels=args.max_pixels,
+                    height=args.height,
+                    width=args.width,
+                    height_division_factor=16,
+                    width_division_factor=16,
+                    num_frames=args.num_frames,
+                    time_division_factor=4,
+                    time_division_remainder=1,
+                ),
+                special_operator_map={
+                    "animate_face_video": ToAbsolutePath(args.dataset_base_path) >> LoadVideo(args.num_frames, 4, 1, frame_processor=ImageCropAndResize(512, 512, None, 16, 16)),
+                    "input_audio": ToAbsolutePath(args.dataset_base_path) >> LoadAudio(sr=16000),
+                    "camera_control_pose_file": ToAbsolutePath(args.dataset_base_path),
+                    "pose_file_aligned": ToAbsolutePath(args.dataset_base_path),
+                    "pose_file_raw": ToAbsolutePath(args.dataset_base_path),
+                }
+            )
+
+    def run(self, pipe: WanVideoPipeline, step: int):
+        if not self.enabled or self.dataset is None:
+            return []
+
+        output_dir = os.path.join(self.args.output_path, self.args.validation_output_subdir, f"step-{step}")
+        os.makedirs(output_dir, exist_ok=True)
+
+        results = []
+        for sample_id, sample_idx in enumerate(self.sample_indices):
+            data = self.dataset[sample_idx]
+            try:
+                prompt = data.get(self.args.validation_prompt_key, None)
+                if prompt is None:
+                    prompt = data.get("caption", data.get("prompt", ""))
+                if prompt is None or str(prompt).strip() == "":
+                    prompt = " "
+                video = data.get("video", data.get("video_path"))
+                if video is None or len(video) == 0:
+                    raise ValueError("Validation sample contains empty video.")
+                input_image = video[0]
+                num_frames = len(video)
+                pose_file = data.get("camera_control_pose_file")
+                if pose_file is None:
+                    pose_file = data.get(self.pose_key, data.get("pose_file_aligned", data.get("pose_file_raw")))
+                pose_width = int(float(data.get("width", self.args.width or 1280)))
+                pose_height = int(float(data.get("height", self.args.height or 720)))
+                with torch.inference_mode():
+                    generated = pipe(
+                        prompt=prompt,
+                        negative_prompt=self.args.validation_negative_prompt,
+                        input_image=input_image,
+                        camera_control_pose_file=pose_file,
+                        camera_control_pose_width=pose_width,
+                        camera_control_pose_height=pose_height,
+                        height=self.args.height,
+                        width=self.args.width,
+                        num_frames=num_frames,
+                        seed=self.args.validation_seed + sample_id,
+                        num_inference_steps=self.args.validation_inference_steps,
+                        tiled=self.args.validation_tiled,
+                        progress_bar_cmd=lambda x: x,
+                    )
+                save_path = os.path.join(output_dir, f"sample-{sample_id}.mp4")
+                save_video(generated, save_path, fps=self.args.validation_fps, quality=5)
+                video_rel_path = str(self.rows[sample_idx].get("video_path", ""))
+                results.append({
+                    "sample_id": sample_id,
+                    "video_path": save_path,
+                    "video_rel_path": video_rel_path,
+                    "prompt": prompt,
+                })
+            except Exception as e:
+                results.append({
+                    "sample_id": sample_id,
+                    "error": str(e),
+                })
+        return results
+
+
+class WandbLogger:
+    def __init__(self, args):
+        self.enabled = args.wandb_project is not None and args.wandb_project != ""
+        self.wandb = None
+        if not self.enabled:
+            return
+        try:
+            import wandb
+        except ImportError as e:
+            raise ImportError("`wandb` is required when --wandb_project is set. Please run `pip install wandb`.") from e
+        self.wandb = wandb
+        init_kwargs = {
+            "project": args.wandb_project,
+            "name": args.wandb_run_name,
+            "entity": args.wandb_entity,
+            "mode": args.wandb_mode,
+            "config": vars(args),
+        }
+        if args.wandb_tags is not None and args.wandb_tags.strip() != "":
+            init_kwargs["tags"] = [tag.strip() for tag in args.wandb_tags.split(",") if tag.strip()]
+        self.wandb.init(**init_kwargs)
+
+    def log(self, data, step=None):
+        if self.enabled:
+            self.wandb.log(data, step=step)
+
+    def video(self, path, fps=15):
+        if not self.enabled:
+            return None
+        return self.wandb.Video(path, fps=fps, format="mp4")
+
+    def finish(self):
+        if self.enabled:
+            self.wandb.finish()
+
+
 def wan_parser():
     parser = argparse.ArgumentParser(description="Simple example of a training script.")
     parser = add_general_config(parser)
@@ -154,6 +322,22 @@ def wan_parser():
     parser.add_argument("--max_timestep_boundary", type=float, default=1.0, help="Max timestep boundary (for mixed models, e.g., Wan-AI/Wan2.2-I2V-A14B).")
     parser.add_argument("--min_timestep_boundary", type=float, default=0.0, help="Min timestep boundary (for mixed models, e.g., Wan-AI/Wan2.2-I2V-A14B).")
     parser.add_argument("--initialize_model_on_cpu", default=False, action="store_true", help="Whether to initialize models on CPU.")
+    parser.add_argument("--wandb_project", type=str, default=None, help="Weights & Biases project name.")
+    parser.add_argument("--wandb_run_name", type=str, default=None, help="Weights & Biases run name.")
+    parser.add_argument("--wandb_entity", type=str, default=None, help="Weights & Biases entity/team.")
+    parser.add_argument("--wandb_mode", type=str, default="online", help="Weights & Biases mode: online/offline/disabled.")
+    parser.add_argument("--wandb_tags", type=str, default=None, help="Comma-separated tags for Weights & Biases.")
+    parser.add_argument("--wandb_log_steps", type=int, default=1, help="Log scalar metrics every N steps.")
+    parser.add_argument("--validation_metadata_path", type=str, default=None, help="Validation metadata path. Inference runs at each save step.")
+    parser.add_argument("--validation_num_samples", type=int, default=1, help="Number of validation samples to run per validation trigger.")
+    parser.add_argument("--validation_inference_steps", type=int, default=30, help="Inference steps used during validation generation.")
+    parser.add_argument("--validation_seed", type=int, default=0, help="Base seed used for validation generation.")
+    parser.add_argument("--validation_fps", type=int, default=15, help="FPS used when saving validation videos.")
+    parser.add_argument("--validation_negative_prompt", type=str, default="", help="Negative prompt used for validation generation.")
+    parser.add_argument("--validation_prompt_key", type=str, default="caption", help="Metadata key to use as prompt on validation samples.")
+    parser.add_argument("--validation_pose_key", type=str, default=None, help="Metadata key for pose file on validation samples. Default inferred from data_file_keys.")
+    parser.add_argument("--validation_output_subdir", type=str, default="validation", help="Subfolder under output_path for validation videos.")
+    parser.add_argument("--validation_tiled", type=_str2bool, default=True, help="Enable tiled VAE during validation inference.")
     return parser
 
 
@@ -214,6 +398,38 @@ if __name__ == "__main__":
         args.output_path,
         remove_prefix_in_ckpt=args.remove_prefix_in_ckpt,
     )
+    wandb_logger = WandbLogger(args) if accelerator.is_main_process else None
+    validation_runner = WanValidationRunner(args) if accelerator.is_main_process else None
+
+    def _on_log_step(step, metrics):
+        if not accelerator.is_main_process or wandb_logger is None:
+            return
+        wandb_logger.log(metrics, step=step)
+
+    def _on_checkpoint_saved(step, checkpoint_path, accelerator, model):
+        if not accelerator.is_main_process or validation_runner is None:
+            return
+        if not validation_runner.enabled:
+            return
+        unwrapped = accelerator.unwrap_model(model)
+        results = validation_runner.run(unwrapped.pipe, step=step)
+        if wandb_logger is not None:
+            logs = {
+                "train/checkpoint_step": step,
+                "train/checkpoint_path": checkpoint_path,
+                "validation/num_samples": len(results),
+                "validation/num_success": sum(1 for item in results if "video_path" in item),
+            }
+            for item in results:
+                sample_id = item["sample_id"]
+                if "video_path" in item:
+                    logs[f"validation/video_{sample_id}"] = wandb_logger.video(item["video_path"], fps=args.validation_fps)
+                    logs[f"validation/prompt_{sample_id}"] = item["prompt"]
+                    logs[f"validation/source_{sample_id}"] = item["video_rel_path"]
+                else:
+                    logs[f"validation/error_{sample_id}"] = item["error"]
+            wandb_logger.log(logs, step=step)
+
     launcher_map = {
         "sft:data_process": launch_data_process_task,
         "direct_distill:data_process": launch_data_process_task,
@@ -222,4 +438,13 @@ if __name__ == "__main__":
         "direct_distill": launch_training_task,
         "direct_distill:train": launch_training_task,
     }
-    launcher_map[args.task](accelerator, dataset, model, model_logger, args=args)
+    if args.task.endswith(":data_process"):
+        launcher_map[args.task](accelerator, dataset, model, model_logger, args=args)
+    else:
+        launcher_map[args.task](
+            accelerator, dataset, model, model_logger, args=args,
+            on_log_step=_on_log_step,
+            on_checkpoint_saved=_on_checkpoint_saved,
+        )
+    if accelerator.is_main_process and wandb_logger is not None:
+        wandb_logger.finish()

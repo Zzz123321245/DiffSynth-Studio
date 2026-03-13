@@ -38,7 +38,8 @@ input_image = video_data[0]
 prompt = sample["caption"]
 
 camera_control_kwargs = {}
-pose_file = sample.get("pose_file_aligned") or sample.get("pose_file_raw")
+pose_file = None
+# pose_file = sample.get("pose_file_aligned") or sample.get("pose_file_raw")
 if pose_file is not None:
     pose_path = DATASET_ROOT / pose_file
     if pose_path.is_file():

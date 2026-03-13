@@ -23,6 +23,8 @@ def launch_training_task(
     save_steps: int = None,
     num_epochs: int = 1,
     args = None,
+    on_log_step = None,
+    on_checkpoint_saved = None,
 ):
     if args is not None:
         learning_rate = args.learning_rate
@@ -30,6 +32,7 @@ def launch_training_task(
         num_workers = args.dataset_num_workers
         save_steps = args.save_steps
         num_epochs = args.num_epochs
+    log_steps = max(getattr(args, "wandb_log_steps", 1), 1) if args is not None else 1
     
     optimizer = torch.optim.AdamW(model.trainable_modules(), lr=learning_rate, weight_decay=weight_decay)
     scheduler = torch.optim.lr_scheduler.ConstantLR(optimizer)
@@ -47,8 +50,27 @@ def launch_training_task(
                     loss = model(data)
                 accelerator.backward(loss)
                 optimizer.step()
-                model_logger.on_step_end(accelerator, model, save_steps, loss=loss)
+                checkpoint_path = model_logger.on_step_end(accelerator, model, save_steps, loss=loss)
                 scheduler.step()
+                global_step = model_logger.num_steps
+                if on_log_step is not None and global_step % log_steps == 0:
+                    loss_for_log = accelerator.gather(loss.detach().float().reshape(1)).mean().item()
+                    on_log_step(
+                        step=global_step,
+                        metrics={
+                            "train/loss": loss_for_log,
+                            "train/lr": scheduler.get_last_lr()[0],
+                        },
+                    )
+                if checkpoint_path is not None and on_checkpoint_saved is not None:
+                    accelerator.wait_for_everyone()
+                    on_checkpoint_saved(
+                        step=global_step,
+                        checkpoint_path=checkpoint_path,
+                        accelerator=accelerator,
+                        model=model,
+                    )
+                    accelerator.wait_for_everyone()
         if save_steps is None:
             model_logger.on_epoch_end(accelerator, model, epoch_id)
     model_logger.on_training_end(accelerator, model, save_steps)
