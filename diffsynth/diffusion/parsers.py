@@ -7,6 +7,9 @@ def add_dataset_base_config(parser: argparse.ArgumentParser):
     parser.add_argument("--dataset_repeat", type=int, default=1, help="Number of times to repeat the dataset per epoch.")
     parser.add_argument("--dataset_num_workers", type=int, default=0, help="Number of workers for data loading.")
     parser.add_argument("--data_file_keys", type=str, default="image,video", help="Data file keys in the metadata. Comma-separated.")
+    parser.add_argument("--dataset_min_num_frames", type=int, default=0, help="Minimum frames required by metadata key (set > 0 to enable filtering, e.g. 81).")
+    parser.add_argument("--dataset_num_frames_key", type=str, default="num_frames", help="Metadata key used for frame-count filtering.")
+    parser.add_argument("--dataset_drop_missing_num_frames", default=False, action="store_true", help="Drop samples with missing/invalid frame count when --dataset_min_num_frames is enabled.")
     return parser
 
 def add_image_size_config(parser: argparse.ArgumentParser):

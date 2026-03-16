@@ -1,4 +1,13 @@
-#!/usr/bin/env bash
+#!/bin/bash --login
+#SBATCH -J wan21_14b_cam_lora_2
+#SBATCH -p gpuA
+#SBATCH -G 2
+#SBATCH -n 1
+#SBATCH -c 12
+#SBATCH --mem 128G
+#SBATCH -t 4-0
+#SBATCH -o logs/%x_%j.out
+#SBATCH -e logs/%x_%j.err
 
 module purge
 module load libs/cuda/12.8.1
@@ -42,7 +51,7 @@ WANDB_API_KEY_IN_SCRIPT="${WANDB_API_KEY_IN_SCRIPT:-wandb_v1_7i4UqZ1GkmT3m33SuS0
 WANDB_API_KEY="${WANDB_API_KEY:-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}"
 WANDB_API_KEY_FILE="${WANDB_API_KEY_FILE:-}"
 
-NUM_PROCESSES="${NUM_PROCESSES:-2}"
+NUM_PROCESSES="${NUM_PROCESSES:-}"
 NUM_MACHINES="${NUM_MACHINES:-1}"
 
 # Distributed debug logs (enabled by default).
@@ -87,8 +96,6 @@ if [[ -n "${WANDB_PROJECT}" ]]; then
   fi
 fi
 
-
-# The details of training configuration are in the called script, which is shared with other slurm scripts for easy maintenance.
 ACCELERATE_ARGS=(
   --num_processes "${NUM_PROCESSES}"
   --num_machines "${NUM_MACHINES}"
@@ -100,7 +107,7 @@ TRAIN_ARGS=(
   --data_file_keys "video_path,${POSE_KEY}"
   --height 480
   --width 832
-  --dataset_repeat "${DATASET_REPEAT:-5}"
+  --dataset_repeat 5
   --save_steps "${SAVE_STEPS}"
   --model_id_with_origin_paths "PAI/Wan2.1-Fun-V1.1-14B-Control-Camera:diffusion_pytorch_model*.safetensors,PAI/Wan2.1-Fun-V1.1-14B-Control-Camera:models_t5_umt5-xxl-enc-bf16.pth,PAI/Wan2.1-Fun-V1.1-14B-Control-Camera:Wan2.1_VAE.pth,PAI/Wan2.1-Fun-V1.1-14B-Control-Camera:models_clip_open-clip-xlm-roberta-large-vit-huge-14.pth"
   --learning_rate 1e-5
@@ -109,7 +116,7 @@ TRAIN_ARGS=(
   --output_path "${OUTPUT_PATH}"
   --lora_base_model "dit"
   --lora_target_modules "q,k,v,o,ffn.0,ffn.2"
-  --lora_rank "${LORA_RANK:-32}"
+  --lora_rank 32
   --extra_inputs "input_image,camera_control_pose_file,camera_control_pose_width,camera_control_pose_height"
   --validation_metadata_path "${VALIDATION_METADATA_PATH}"
   --validation_num_samples "${VALIDATION_NUM_SAMPLES}"
@@ -122,7 +129,8 @@ TRAIN_ARGS=(
   --dataset_num_workers 1
   --lora_checkpoint "models/train/Wan2.1-Fun-V1.1-14B-Control-Camera_lora_realpose_train_pose_file_aligned/step-600.safetensors"
   --dist_timeout_minutes 30
-  --gradient_accumulation_steps "${GRADIENT_ACCUMULATION_STEPS:-2}"
+  --gradient_accumulation_steps 2
+
 )
 
 if [[ "${ENABLE_MIN_FRAMES_FILTER}" == "1" ]]; then

@@ -2,6 +2,12 @@ import os, torch
 from accelerate import Accelerator
 
 
+def _unwrap_ddp_model(model):
+    while hasattr(model, "module"):
+        model = model.module
+    return model
+
+
 class ModelLogger:
     def __init__(self, output_path, remove_prefix_in_ckpt=None, state_dict_converter=lambda x:x):
         self.output_path = output_path
@@ -19,9 +25,10 @@ class ModelLogger:
 
     def on_epoch_end(self, accelerator: Accelerator, model: torch.nn.Module, epoch_id):
         accelerator.wait_for_everyone()
-        state_dict = accelerator.get_state_dict(model)
+        unwrapped_model = _unwrap_ddp_model(model)
+        state_dict = unwrapped_model.state_dict()
         if accelerator.is_main_process:
-            state_dict = accelerator.unwrap_model(model).export_trainable_state_dict(state_dict, remove_prefix=self.remove_prefix_in_ckpt)
+            state_dict = unwrapped_model.export_trainable_state_dict(state_dict, remove_prefix=self.remove_prefix_in_ckpt)
             state_dict = self.state_dict_converter(state_dict)
             os.makedirs(self.output_path, exist_ok=True)
             path = os.path.join(self.output_path, f"epoch-{epoch_id}.safetensors")

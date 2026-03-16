@@ -1,10 +1,43 @@
-import torch, os, argparse, accelerate, warnings, json, csv
+import torch, os, argparse, accelerate, warnings, json, csv, atexit, signal, multiprocessing, gc
+from tqdm.auto import tqdm
 from diffsynth.core import UnifiedDataset
 from diffsynth.core.data.operators import LoadVideo, LoadAudio, ImageCropAndResize, ToAbsolutePath
 from diffsynth.pipelines.wan_video import WanVideoPipeline, ModelConfig
 from diffsynth.diffusion import *
 from diffsynth.utils.data import save_video
+from datetime import timedelta
+
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+
+def _cleanup_runtime():
+    for child in multiprocessing.active_children():
+        try:
+            child.terminate()
+        except Exception:
+            pass
+    for child in multiprocessing.active_children():
+        try:
+            child.join(timeout=1)
+        except Exception:
+            pass
+
+    if torch.distributed.is_available() and torch.distributed.is_initialized():
+        try:
+            torch.distributed.destroy_process_group()
+        except Exception:
+            pass
+
+    if torch.cuda.is_available():
+        try:
+            torch.cuda.empty_cache()
+        except Exception:
+            pass
+    gc.collect()
+
+
+def _signal_handler(signum, frame):
+    raise SystemExit(f"Received signal {signum}")
 
 
 class WanTrainingModule(DiffusionTrainingModule):
@@ -258,7 +291,7 @@ class WanValidationRunner:
                         seed=self.args.validation_seed + sample_id,
                         num_inference_steps=self.args.validation_inference_steps,
                         tiled=self.args.validation_tiled,
-                        progress_bar_cmd=lambda x: x,
+                        progress_bar_cmd=tqdm,
                     )
                 save_path = os.path.join(output_dir, f"sample-{sample_id}.mp4")
                 save_video(generated, save_path, fps=self.args.validation_fps, quality=5)
@@ -338,15 +371,30 @@ def wan_parser():
     parser.add_argument("--validation_pose_key", type=str, default=None, help="Metadata key for pose file on validation samples. Default inferred from data_file_keys.")
     parser.add_argument("--validation_output_subdir", type=str, default="validation", help="Subfolder under output_path for validation videos.")
     parser.add_argument("--validation_tiled", type=_str2bool, default=True, help="Enable tiled VAE during validation inference.")
+    parser.add_argument("--dist_timeout_minutes", type=int, default=30, help="Timeout in minutes for distributed synchronization operations. Increase this if you encounter timeout errors during distributed training.")
+
     return parser
 
 
 if __name__ == "__main__":
     parser = wan_parser()
     args = parser.parse_args()
+    atexit.register(_cleanup_runtime)
+    signal.signal(signal.SIGTERM, _signal_handler)
+    signal.signal(signal.SIGINT, _signal_handler)
+    ddp_kwargs = accelerate.DistributedDataParallelKwargs(
+        find_unused_parameters=args.find_unused_parameters
+    )
+    pg_kwargs = accelerate.InitProcessGroupKwargs(
+        timeout=timedelta(minutes=args.dist_timeout_minutes)
+    )   
+    # accelerator = accelerate.Accelerator(
+    #     gradient_accumulation_steps=args.gradient_accumulation_steps,
+    #     kwargs_handlers=[accelerate.DistributedDataParallelKwargs(find_unused_parameters=args.find_unused_parameters)],
+    # )
     accelerator = accelerate.Accelerator(
         gradient_accumulation_steps=args.gradient_accumulation_steps,
-        kwargs_handlers=[accelerate.DistributedDataParallelKwargs(find_unused_parameters=args.find_unused_parameters)],
+        kwargs_handlers=[ddp_kwargs, pg_kwargs],
     )
     dataset = UnifiedDataset(
         base_path=args.dataset_base_path,
@@ -370,7 +418,10 @@ if __name__ == "__main__":
             "camera_control_pose_file": ToAbsolutePath(args.dataset_base_path),
             "pose_file_aligned": ToAbsolutePath(args.dataset_base_path),
             "pose_file_raw": ToAbsolutePath(args.dataset_base_path),
-        }
+        },
+        dataset_min_num_frames=args.dataset_min_num_frames,
+        dataset_num_frames_key=args.dataset_num_frames_key,
+        dataset_drop_missing_num_frames=args.dataset_drop_missing_num_frames,
     )
     model = WanTrainingModule(
         model_paths=args.model_paths,
@@ -412,7 +463,12 @@ if __name__ == "__main__":
         if not validation_runner.enabled:
             return
         unwrapped = accelerator.unwrap_model(model)
-        results = validation_runner.run(unwrapped.pipe, step=step)
+        try:
+            results = validation_runner.run(unwrapped.pipe, step=step)
+        finally:
+            # Validation uses inference path and flips scheduler.training=False.
+            # Restore training mode before next optimization step.
+            unwrapped.pipe.scheduler.set_timesteps(1000, training=True)
         if wandb_logger is not None:
             logs = {
                 "train/checkpoint_step": step,
@@ -438,13 +494,16 @@ if __name__ == "__main__":
         "direct_distill": launch_training_task,
         "direct_distill:train": launch_training_task,
     }
-    if args.task.endswith(":data_process"):
-        launcher_map[args.task](accelerator, dataset, model, model_logger, args=args)
-    else:
-        launcher_map[args.task](
-            accelerator, dataset, model, model_logger, args=args,
-            on_log_step=_on_log_step,
-            on_checkpoint_saved=_on_checkpoint_saved,
-        )
-    if accelerator.is_main_process and wandb_logger is not None:
-        wandb_logger.finish()
+    try:
+        if args.task.endswith(":data_process"):
+            launcher_map[args.task](accelerator, dataset, model, model_logger, args=args)
+        else:
+            launcher_map[args.task](
+                accelerator, dataset, model, model_logger, args=args,
+                on_log_step=_on_log_step,
+                on_checkpoint_saved=_on_checkpoint_saved,
+            )
+    finally:
+        if accelerator.is_main_process and wandb_logger is not None:
+            wandb_logger.finish()
+        _cleanup_runtime()
