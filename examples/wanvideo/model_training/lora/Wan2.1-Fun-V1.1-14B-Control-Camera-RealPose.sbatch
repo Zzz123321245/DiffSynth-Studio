@@ -1,11 +1,11 @@
 #!/bin/bash --login
-#SBATCH -J wan21_14b_cam_lora_2
+#SBATCH -J wan21_14b_cam_lora_1
 #SBATCH -p gpuA
 #SBATCH -G 2
 #SBATCH -n 1
-#SBATCH -c 12
+#SBATCH -c 8
 #SBATCH --mem 128G
-#SBATCH -t 4-0
+#SBATCH -t 2-0
 #SBATCH -o logs/%x_%j.out
 #SBATCH -e logs/%x_%j.err
 

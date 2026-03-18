@@ -142,4 +142,14 @@ if [[ -n "${WANDB_PROJECT}" ]]; then
   fi
 fi
 
+print_arg_array() {
+  local name="$1"
+  shift
+  echo "===== ${name} ====="
+  printf '  %q\n' "$@"
+}
+
+print_arg_array "ACCELERATE_ARGS" "${ACCELERATE_ARGS[@]}"
+print_arg_array "TRAIN_ARGS" "${TRAIN_ARGS[@]}"
+
 accelerate launch "${ACCELERATE_ARGS[@]}" examples/wanvideo/model_training/train.py "${TRAIN_ARGS[@]}"
