@@ -248,7 +248,9 @@ class WanValidationRunner:
                     "camera_control_pose_file": ToAbsolutePath(args.dataset_base_path),
                     "pose_file_aligned": ToAbsolutePath(args.dataset_base_path),
                     "pose_file_raw": ToAbsolutePath(args.dataset_base_path),
-                }
+                },
+                dataset_read_retry_count=0,
+                dataset_read_retry_sleep_seconds=0.0,
             )
 
     def run(self, pipe: WanVideoPipeline, step: int):
@@ -422,6 +424,8 @@ if __name__ == "__main__":
         dataset_min_num_frames=args.dataset_min_num_frames,
         dataset_num_frames_key=args.dataset_num_frames_key,
         dataset_drop_missing_num_frames=args.dataset_drop_missing_num_frames,
+        dataset_read_retry_count=args.dataset_read_retry_count,
+        dataset_read_retry_sleep_seconds=args.dataset_read_retry_sleep_seconds,
     )
     model = WanTrainingModule(
         model_paths=args.model_paths,

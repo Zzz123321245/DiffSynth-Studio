@@ -1,0 +1,208 @@
+SubmitDir=/net/scratch/p64096rw/DiffSynth-Studio
+ScriptDir=/net/scratch/p64096rw/DiffSynth-Studio/examples/wanvideo/model_training/lora
+RepoRoot=/net/scratch/p64096rw/DiffSynth-Studio
+WorkDir(pwd)=/net/scratch/p64096rw/DiffSynth-Studio
+JobID=12274782
+CUDA_VISIBLE_DEVICES=0,1
+SLURM_GPUS=2 SLURM_GPUS_ON_NODE=2
+Launching via /net/scratch/p64096rw/DiffSynth-Studio/examples/wanvideo/model_training/lora/Wan2.1-Fun-V1.1-14B-Control-Camera-RealPose.sh
+NUM_PROCESSES=2 NUM_MACHINES=1
+===== ACCELERATE_ARGS =====
+  --num_processes
+  2
+  --num_machines
+  1
+===== TRAIN_ARGS =====
+  --dataset_base_path
+  /scratch/p64096rw/ac3d/RealCam-Vid
+  --dataset_metadata_path
+  /mnt/iusers01/eee01/p64096rw/scratch/ac3d/realestate10k2/annotations/train.json
+  --data_file_keys
+  video_path\,pose_file_aligned
+  --height
+  480
+  --width
+  832
+  --dataset_repeat
+  5
+  --save_steps
+  200
+  --model_id_with_origin_paths
+  PAI/Wan2.1-Fun-V1.1-14B-Control-Camera:diffusion_pytorch_model\*.safetensors\,PAI/Wan2.1-Fun-V1.1-14B-Control-Camera:models_t5_umt5-xxl-enc-bf16.pth\,PAI/Wan2.1-Fun-V1.1-14B-Control-Camera:Wan2.1_VAE.pth\,PAI/Wan2.1-Fun-V1.1-14B-Control-Camera:models_clip_open-clip-xlm-roberta-large-vit-huge-14.pth
+  --learning_rate
+  1e-5
+  --num_epochs
+  10
+  --remove_prefix_in_ckpt
+  pipe.dit.
+  --output_path
+  ./models/train/Wan2.1-Fun-V1.1-14B-Control-Camera_lora_realpose_train_pose_file_aligned
+  --lora_base_model
+  dit
+  --lora_target_modules
+  q\,k\,v\,o\,ffn.0\,ffn.2
+  --lora_rank
+  32
+  --extra_inputs
+  input_image\,camera_control_pose_file\,camera_control_pose_width\,camera_control_pose_height
+  --validation_metadata_path
+  /scratch/p64096rw/ac3d/RealCam-Vid/annotations/validation.json
+  --validation_num_samples
+  2
+  --validation_inference_steps
+  30
+  --validation_seed
+  0
+  --validation_fps
+  15
+  --validation_output_subdir
+  validation
+  --validation_pose_key
+  pose_file_aligned
+  --wandb_log_steps
+  1
+  --dataset_num_workers
+  1
+  --lora_checkpoint
+  models/train/Wan2.1-Fun-V1.1-14B-Control-Camera_lora_realpose_train_pose_file_aligned/step-600.safetensors
+  --dist_timeout_minutes
+  30
+  --gradient_accumulation_steps
+  4
+  --dataset_min_num_frames
+  81
+  --dataset_num_frames_key
+  num_frames
+  --dataset_drop_missing_num_frames
+  --wandb_project
+  \ WAN14BControlCameraRealPose
+  --wandb_run_name
+  Wan2.1-Fun-V1.1-14B-Control-Camera-RealPose
+  --wandb_mode
+  online
+  --wandb_entity
+  runzewang2023-university-of-manchester
+Metadata frame filter enabled: num_frames>=81. before=42822, kept=31772, dropped_short=11050, dropped_missing_or_invalid=0.
+Metadata frame filter enabled: num_frames>=81. before=42822, kept=31772, dropped_short=11050, dropped_missing_or_invalid=0.
+To avoid repeatedly downloading model files, (PAI/Wan2.1-Fun-V1.1-14B-Control-Camera, models_t5_umt5-xxl-enc-bf16.pth) is redirected to ('DiffSynth-Studio/Wan-Series-Converted-Safetensors', 'models_t5_umt5-xxl-enc-bf16.safetensors'). You can use `redirect_common_files=False` to disable file redirection.To avoid repeatedly downloading model files, (PAI/Wan2.1-Fun-V1.1-14B-Control-Camera, models_t5_umt5-xxl-enc-bf16.pth) is redirected to ('DiffSynth-Studio/Wan-Series-Converted-Safetensors', 'models_t5_umt5-xxl-enc-bf16.safetensors'). You can use `redirect_common_files=False` to disable file redirection.
+
+To avoid repeatedly downloading model files, (PAI/Wan2.1-Fun-V1.1-14B-Control-Camera, Wan2.1_VAE.pth) is redirected to ('DiffSynth-Studio/Wan-Series-Converted-Safetensors', 'Wan2.1_VAE.safetensors'). You can use `redirect_common_files=False` to disable file redirection.To avoid repeatedly downloading model files, (PAI/Wan2.1-Fun-V1.1-14B-Control-Camera, Wan2.1_VAE.pth) is redirected to ('DiffSynth-Studio/Wan-Series-Converted-Safetensors', 'Wan2.1_VAE.safetensors'). You can use `redirect_common_files=False` to disable file redirection.
+
+To avoid repeatedly downloading model files, (PAI/Wan2.1-Fun-V1.1-14B-Control-Camera, models_clip_open-clip-xlm-roberta-large-vit-huge-14.pth) is redirected to ('DiffSynth-Studio/Wan-Series-Converted-Safetensors', 'models_clip_open-clip-xlm-roberta-large-vit-huge-14.safetensors'). You can use `redirect_common_files=False` to disable file redirection.To avoid repeatedly downloading model files, (PAI/Wan2.1-Fun-V1.1-14B-Control-Camera, models_clip_open-clip-xlm-roberta-large-vit-huge-14.pth) is redirected to ('DiffSynth-Studio/Wan-Series-Converted-Safetensors', 'models_clip_open-clip-xlm-roberta-large-vit-huge-14.safetensors'). You can use `redirect_common_files=False` to disable file redirection.
+
+Downloading Model from https://www.modelscope.cn to directory: /net/scratch/p64096rw/DiffSynth-Studio/models/PAI/Wan2.1-Fun-V1.1-14B-Control-Camera
+Loading models from: "./models/PAI/Wan2.1-Fun-V1.1-14B-Control-Camera/diffusion_pytorch_model.safetensors"
+Downloading Model from https://www.modelscope.cn to directory: /net/scratch/p64096rw/DiffSynth-Studio/models/PAI/Wan2.1-Fun-V1.1-14B-Control-Camera
+Loading models from: "./models/PAI/Wan2.1-Fun-V1.1-14B-Control-Camera/diffusion_pytorch_model.safetensors"
+Loaded model: {
+    "model_name": "wan_video_dit",
+    "model_class": "diffsynth.models.wan_video_dit.WanModel",
+    "extra_kwargs": {
+        "has_image_input": true,
+        "patch_size": [
+            1,
+            2,
+            2
+        ],
+        "in_dim": 32,
+        "dim": 5120,
+        "ffn_dim": 13824,
+        "freq_dim": 256,
+        "text_dim": 4096,
+        "out_dim": 16,
+        "num_heads": 40,
+        "num_layers": 40,
+        "eps": 1e-06,
+        "has_ref_conv": false,
+        "add_control_adapter": true,
+        "in_dim_control_adapter": 24
+    }
+}
+Loaded model: {
+    "model_name": "wan_video_dit",
+    "model_class": "diffsynth.models.wan_video_dit.WanModel",
+    "extra_kwargs": {
+        "has_image_input": true,
+        "patch_size": [
+            1,
+            2,
+            2
+        ],
+        "in_dim": 32,
+        "dim": 5120,
+        "ffn_dim": 13824,
+        "freq_dim": 256,
+        "text_dim": 4096,
+        "out_dim": 16,
+        "num_heads": 40,
+        "num_layers": 40,
+        "eps": 1e-06,
+        "has_ref_conv": false,
+        "add_control_adapter": true,
+        "in_dim_control_adapter": 24
+    }
+}
+Downloading Model from https://www.modelscope.cn to directory: /net/scratch/p64096rw/DiffSynth-Studio/models/DiffSynth-Studio/Wan-Series-Converted-Safetensors
+Loading models from: "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/models_t5_umt5-xxl-enc-bf16.safetensors"
+Downloading Model from https://www.modelscope.cn to directory: /net/scratch/p64096rw/DiffSynth-Studio/models/DiffSynth-Studio/Wan-Series-Converted-Safetensors
+Loading models from: "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/models_t5_umt5-xxl-enc-bf16.safetensors"
+Loaded model: {
+    "model_name": "wan_video_text_encoder",
+    "model_class": "diffsynth.models.wan_video_text_encoder.WanTextEncoder",
+    "extra_kwargs": null
+}
+Loaded model: {
+    "model_name": "wan_video_text_encoder",
+    "model_class": "diffsynth.models.wan_video_text_encoder.WanTextEncoder",
+    "extra_kwargs": null
+}
+Downloading Model from https://www.modelscope.cn to directory: /net/scratch/p64096rw/DiffSynth-Studio/models/DiffSynth-Studio/Wan-Series-Converted-Safetensors
+Loading models from: "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/Wan2.1_VAE.safetensors"
+Downloading Model from https://www.modelscope.cn to directory: /net/scratch/p64096rw/DiffSynth-Studio/models/DiffSynth-Studio/Wan-Series-Converted-Safetensors
+Loaded model: {
+    "model_name": "wan_video_vae",
+    "model_class": "diffsynth.models.wan_video_vae.WanVideoVAE",
+    "extra_kwargs": null
+}
+Loading models from: "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/Wan2.1_VAE.safetensors"
+Loaded model: {
+    "model_name": "wan_video_vae",
+    "model_class": "diffsynth.models.wan_video_vae.WanVideoVAE",
+    "extra_kwargs": null
+}
+Downloading Model from https://www.modelscope.cn to directory: /net/scratch/p64096rw/DiffSynth-Studio/models/DiffSynth-Studio/Wan-Series-Converted-Safetensors
+Loading models from: "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/models_clip_open-clip-xlm-roberta-large-vit-huge-14.safetensors"
+Downloading Model from https://www.modelscope.cn to directory: /net/scratch/p64096rw/DiffSynth-Studio/models/DiffSynth-Studio/Wan-Series-Converted-Safetensors
+Loading models from: "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/models_clip_open-clip-xlm-roberta-large-vit-huge-14.safetensors"
+Loaded model: {
+    "model_name": "wan_video_image_encoder",
+    "model_class": "diffsynth.models.wan_video_image_encoder.WanImageEncoder",
+    "extra_kwargs": null
+}
+Using wan_video_text_encoder from "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/models_t5_umt5-xxl-enc-bf16.safetensors".
+Using wan_video_dit from "./models/PAI/Wan2.1-Fun-V1.1-14B-Control-Camera/diffusion_pytorch_model.safetensors".
+Using wan_video_vae from "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/Wan2.1_VAE.safetensors".
+Using wan_video_image_encoder from "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/models_clip_open-clip-xlm-roberta-large-vit-huge-14.safetensors".
+No wan_video_motion_controller models available. This is not an error.
+No wan_video_vace models available. This is not an error.
+No wan_video_vap models available. This is not an error.
+No wans2v_audio_encoder models available. This is not an error.
+No wan_video_animate_adapter models available. This is not an error.
+Loaded model: {
+    "model_name": "wan_video_image_encoder",
+    "model_class": "diffsynth.models.wan_video_image_encoder.WanImageEncoder",
+    "extra_kwargs": null
+}
+Using wan_video_text_encoder from "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/models_t5_umt5-xxl-enc-bf16.safetensors".
+Using wan_video_dit from "./models/PAI/Wan2.1-Fun-V1.1-14B-Control-Camera/diffusion_pytorch_model.safetensors".
+Using wan_video_vae from "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/Wan2.1_VAE.safetensors".
+Using wan_video_image_encoder from "./models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/models_clip_open-clip-xlm-roberta-large-vit-huge-14.safetensors".
+No wan_video_motion_controller models available. This is not an error.
+No wan_video_vace models available. This is not an error.
+No wan_video_vap models available. This is not an error.
+No wans2v_audio_encoder models available. This is not an error.
+No wan_video_animate_adapter models available. This is not an error.
+Downloading Model from https://www.modelscope.cn to directory: /net/scratch/p64096rw/DiffSynth-Studio/models/Wan-AI/Wan2.1-T2V-1.3B
+Downloading Model from https://www.modelscope.cn to directory: /net/scratch/p64096rw/DiffSynth-Studio/models/Wan-AI/Wan2.1-T2V-1.3B
+LoRA checkpoint loaded: models/train/Wan2.1-Fun-V1.1-14B-Control-Camera_lora_realpose_train_pose_file_aligned/step-600.safetensors, total 800 keys
+LoRA checkpoint loaded: models/train/Wan2.1-Fun-V1.1-14B-Control-Camera_lora_realpose_train_pose_file_aligned/step-600.safetensors, total 800 keys

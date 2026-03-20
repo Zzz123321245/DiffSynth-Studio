@@ -1,0 +1,7 @@
+SubmitDir=/net/scratch/p64096rw/DiffSynth-Studio
+ScriptDir=/var/spool/slurmd/job12240032
+RepoRoot=/
+WorkDir(pwd)=/
+JobID=12240032
+CUDA_VISIBLE_DEVICES=0,1
+SLURM_GPUS=2 SLURM_GPUS_ON_NODE=2
